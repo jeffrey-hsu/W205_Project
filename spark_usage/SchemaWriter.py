@@ -241,4 +241,3 @@ schema_link_table = StructType([
 , StructField("SPCINDCD",IntegerType(),True)
 , StructField("SPCSECCD",IntegerType(),True),
 ])
-
