@@ -12,30 +12,34 @@ import sklearn
 
 sc = SparkContext.getOrCreate()
 
-#one method to create dataframe from txt
+## METHOD TO CREATE DATAFRAME FROM TXT
+## USING COMMA SPLIT OR PIPE SPLIT CANNOT ESTABLISH PROPER TABLE STRUCTURE
+## APPLYING SCHEMA IS NOT SUCCESSFUL 
 my_file = sc.textFile("hdfs:///user/w205/financial_data/financial_suite.txt")
 lines = my_file.map(lambda x: x.split("|"))
 df = spark.createDataFrame(lines)
 
-#second method to create dataframe from txt
-df2 = spark.read.load("hdfs:///user/w205/financial_data/financial_suite.txt", format="text") #WORKS
+## METHOD TO CREATE DATAFRAME FROM TXT
+## LOADING WORKS BUT CANNOT FURTHER APPLY CORRECT SCHEMA ON TOP
+df2 = spark.read.load("hdfs:///user/w205/financial_data/financial_suite.txt", format="text") 
 
-# easiest to create dataframe from CSVs
+## CREATE DATAFRAME FROM CSV
 CRSP_comp_merge = spark.read.load("hdfs:///user/w205/financial_data/crsp_compustat/crsp_compustat_sec_mth.csv", format="csv", header=True)
 link_table = spark.read.load("hdfs:///user/w205/financial_data/linking_table.csv", format="csv", header=True)
 
 
-#dummy data to play around with dataframes
+## DUMMY DATA TO EXAMINE CREATING DATAFRAME IN PYSPARK
 # test1 = sqlContext.createDataFrame([(1,2,3), (11,12,13), (21,)], ["colName1", "colName2", "colName3"])
 # test2 = sqlContext.createDataFrame([(1,2,3), (11,12,13), (21,22,23)], ["colName3", "colName4", "colName5"])
 
-#query data and produce new dataframes
+## CREATE TEMP VIEW TO ALLOW QUERYING FROM THE DATASET
+## QUERY DATA TO CREATE NEW DATAFRAMES
 CRSP_comp_merge.createOrReplaceTempView("tempview")
 results = spark.sql("SELECT loc FROM tempview limit 50")
 
 
-''' SHANES TRANSFORMATIONS BELOW '''
-# Percentage of nulls per column
+''' SHANES EDA TRANSFORMATIONS BELOW '''
+# PERCENTAGES OF NULL PER COLUMN
 def null_ratio(df):
         null_count = df.isnull().sum()
         null_percent = 100 * df.isnull().sum()/len(df)

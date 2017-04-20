@@ -1,11 +1,9 @@
-schema_fin_suite = StructType([
+chema_fin_suite = StructType([
   StructField("gvkey",StringType(),True)
-, StructField("permno",IntegerType(),True)
 , StructField("adate",StringType(),True)
 , StructField("qdate",StringType(),True)
 , StructField("public_date",StringType(),True)
 , StructField("CAPEI",DoubleType(),True)
-, StructField("BE",DoubleType(),True)
 , StructField("bm",DoubleType(),True)
 , StructField("evm",DoubleType(),True)
 , StructField("pe_op_basic",DoubleType(),True)
@@ -71,34 +69,15 @@ schema_fin_suite = StructType([
 , StructField("adv_sale",DoubleType(),True)
 , StructField("staff_sale",DoubleType(),True)
 , StructField("accrual",DoubleType(),True)
-, StructField("gsector",DoubleType(),True)
-, StructField("gicdesc",DoubleType(),True)
-, StructField("sp500",DoubleType(),True)
 , StructField("ptb",DoubleType(),True)
 , StructField("PEG_trailing",DoubleType(),True)
 , StructField("DIVYIELD",DoubleType(),True)
 , StructField("PEG_1yrforward",StringType(),True)
 , StructField("PEG_ltgforward",StringType(),True)
-, StructField("FFI5_desc",StringType(),True)
-, StructField("FFI5",FloatType(),True)
-, StructField("FFI10_desc",StringType(),True)
-, StructField("FFI10",FloatType(),True)
-, StructField("FFI12_desc",StringType(),True)
-, StructField("FFI12",FloatType(),True)
-, StructField("FFI17_desc",StringType(),True)
-, StructField("FFI17",FloatType(),True)
-, StructField("FFI30_desc",StringType(),True)
-, StructField("FFI30",FloatType(),True)
-, StructField("FFI38_desc",StringType(),True)
-, StructField("FFI38",FloatType(),True)
-, StructField("FFI48_desc",StringType(),True)
-, StructField("FFI48",FloatType(),True)
-, StructField("FFI49_desc",StringType(),True)
-, StructField("FFI49",FloatType(),True)
 ])
 
 schema_CRSP_comp = StructType([
- StructField("GVKEY",StringType(),True)
+  StructField("GVKEY",StringType(),True)
 , StructField("LINKPRIM",StringType(),True)
 , StructField("LIID",IntegerType(),True)
 , StructField("LINKTYPE",StringType(),True)
@@ -186,7 +165,7 @@ schema_CRSP_comp = StructType([
 
 
 schema_link_table = StructType([
- StructField("GVKEY",IntegerType(),True)
+  StructField("GVKEY",IntegerType(),True)
 , StructField("LINKPRIM",StringType(),True)
 , StructField("LIID",IntegerType(),True)
 , StructField("LINKTYPE",StringType(),True)
@@ -237,7 +216,7 @@ schema_link_table = StructType([
 
 
 schema_beta_suite = StructType([
- StructField("gvkey",StringType(),True)
+  StructField("gvkey",StringType(),True)
 , StructField("adate",StringType(),True)
 , StructField("qdate",StringType(),True)
 , StructField("public_date",StringType(),True)
@@ -316,7 +295,7 @@ schema_beta_suite = StructType([
 
 
 schema_recs = StructType([
- StructField("TICKER",StringType(),True)
+  StructField("TICKER",StringType(),True)
 , StructField("CUSIP",StringType(),True)
 , StructField("OFTIC",StringType(),True)
 , StructField("CNAME",StringType(),True)
@@ -439,3 +418,4 @@ schema_recs = StructType([
 # , StructField("FFI49_desc",StringType(),True)
 # , StructField("FFI49",FloatType(),True)
 # ])
+
