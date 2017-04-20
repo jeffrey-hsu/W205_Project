@@ -1,48 +1,43 @@
 from pyspark import SparkContext
 import pandas as pd
 import numpy as np
+import datetime
+import numpy as np
+import sklearn
+from pyspark.sql.types import *
+from pyspark.sql import SQLContext
+import pydoop.hdfs as hd
+# from statsmodels import robust
 # import matplotlib.pyplot as plt
 # import matplotlib.cm
 # import seaborn as sns
 # from IPython.display import display
-import datetime
-import numpy as np
-# from statsmodels import robust
-import sklearn
-from pyspark.sql.types import *
 
 sc = SparkContext.getOrCreate()
 
-#one method to create dataframe from txt
-my_file = sc.textFile("hdfs:///user/w205/financial_data/financial_suite.txt")
-lines = my_file.map(lambda x: x.split(",")) #.strip("datetime.date(")
-header = lines.first()
-lines_no_head = lines.filter(lambda x: x != header)
+# LOAD DATASETS - MAKE SURE SCHEMAS ARE LOADED ALREADY
+    # TO LOAD SCHEMAS, COPY-AND-PASTE FROM SchemaWriter.py
+fin_suite = sqlContext.read.format('com.databricks.spark.csv').options(header='true').load("hdfs:///user/w205/financial_data/financial_suite/financial_ratios.csv", schema=schema_fin_suite)
+CRSP_comp_merge = sqlContext.read.format('com.databricks.spark.csv').options(header='true').load("hdfs:///user/w205/financial_data/crsp_compustat/crsp_compustat_sec_mth.csv", schema=schema_CRSP_comp)
+link_table = sqlContext.read.format('com.databricks.spark.csv').options(header='true').load("hdfs:///user/w205/financial_data/linking_table/linking_table.csv", schema=schema_link_table)
+beta_suite = sqlContext.read.format('com.databricks.spark.csv').options(header='true').load("hdfs:///user/w205/financial_data/beta_suite/beta_suite.csv", schema=schema_beta_suite)
+recommendations = sqlContext.read.format('com.databricks.spark.csv').options(header='true').load("hdfs:///user/w205/financial_data/recommendations/recommendations.csv", schema=schema_recs)
 
-df = spark.createDataFrame(lines)
-
-#second method to create dataframe from txt
-df2 = spark.read.load("hdfs:///user/w205/financial_data/financial_suite.txt", format="text") #WORKS
-
-# easiest to create dataframe from CSVs
-CRSP_comp_merge = spark.read.load("hdfs:///user/w205/financial_data/crsp_compustat/crsp_compustat_sec_mth.csv", format="csv", header=True)
-link_table = spark.read.load("hdfs:///user/w205/financial_data/linking_table.csv", format="csv", header=True)
 
 #MERGING DATA
-new_data = df.join(link_table, df.LPERMNO == link_table.LPERMNO)
+df = fin_suite.join(link_table, fin_suite.permno == link_table.LPERMNO)
 
-
-#dummy data to play around with dataframes
-# test1 = sqlContext.createDataFrame([(1,2,3), (11,12,13), (21,)], ["colName1", "colName2", "colName3"])
-# test2 = sqlContext.createDataFrame([(1,2,3), (11,12,13), (21,22,23)], ["colName3", "colName4", "colName5"])
 
 #query data to produce new dataframes
 CRSP_comp_merge.createOrReplaceTempView("tempview")
 results = spark.sql("SELECT loc FROM tempview limit 50")
 
-# should work once Schema is applied and we have numberic variables
+# ADD NEW COLUMN (NEED TO CREATE NEW DATAFRAME)
+fin_suite_new = fin_suite.withColumn("forward_one_month_prccm", fin_suite.prccm+1)
+
+
 # taking mean of GVKEY is only an example, obviously we wouldn't do that
-sqlCtx.table("temptable").groupby("LPERMNO").agg("LPERMNO", mean("GVKEY")).collect()
+# sqlCtx.table("temptable").groupby("LPERMNO").agg("LPERMNO", mean("GVKEY")).collect()
 
 
 ''' SHANES FUNCTIONS BELOW '''
@@ -107,3 +102,52 @@ def meanad(arr):
     # Multiply coefficient by 1.253314 to mimic Standard Deviation (source: IBM)
     return 1.253314 * mad
 
+def modified_z(array):
+    try:
+        try:
+            try:
+                median = np.nanmedian(array)
+                denominator = mad(array) * 1.486
+                array = (array - median) / denominator
+                return array
+            except:
+                median = np.nanmedian(array)
+                denominator = meanad(array) * 1.253314
+                array = (array - median) / denominator
+                return array
+        except:
+            mean = np.nanmean(array)
+            denominator = np.nanstd(array)
+            array = (array - mean) / denominator
+            return array
+    except:
+        array = array.fillna(0)
+
+
+def fill_null(column):
+    try:
+        median = np.nanmedian(column)
+        column = column.fillna(median)
+        return column
+    except:
+        return column
+
+def impute_null(column):
+    try:
+        imp = Imputer(missing_values='NaN', strategy='median', axis=0)
+        imp.fit(column)
+        column = imp.transform(column)
+        return column
+    except:
+        return column
+
+def clip_outliers(column):
+    # Use try in case all null column
+    try:
+        floor = column.quantile(0.02)
+        ceiling = column.quantile(0.98)
+        column = column.clip(floor, ceiling)
+        return column
+    # If error, return as is
+    except:
+        return column
