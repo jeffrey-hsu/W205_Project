@@ -1,3 +1,11 @@
+```
+    1. LOAD SCHEMA FROM schema_writer.py
+    2. LOAD RAW CSV DATASET FROM HDFS AND APPLY SCHEMA TO CREATE DATA FRAMES
+    3. TRNASFORMATION OF DATA FRAME
+    4. CREATE TEMPVIEW FOR APPLYING QUERYING TO CREATE NEW DATA FRAMES
+    5. DEFINE THE FUNCTIONS FOR EXPLORATORY DATA ANALYSIS
+```
+
 from pyspark import SparkContext
 import pandas as pd
 import numpy as np
@@ -5,6 +13,7 @@ import datetime
 import numpy as np
 import sklearn
 from pyspark.sql.types import *
+from pyspark.sql.functions import *
 from pyspark.sql import SQLContext
 import pydoop.hdfs as hd
 # from statsmodels import robust
@@ -15,33 +24,47 @@ import pydoop.hdfs as hd
 
 sc = SparkContext.getOrCreate()
 
-# LOAD DATASETS - MAKE SURE SCHEMAS ARE LOADED ALREADY
-    # TO LOAD SCHEMAS, COPY-AND-PASTE FROM SchemaWriter.py
-fin_suite = sqlContext.read.format('com.databricks.spark.csv').options(header='true').load("hdfs:///user/w205/financial_data/financial_suite/financial_ratios.csv", schema=schema_fin_suite)
-CRSP_comp_merge = sqlContext.read.format('com.databricks.spark.csv').options(header='true').load("hdfs:///user/w205/financial_data/crsp_compustat/crsp_compustat_sec_mth.csv", schema=schema_CRSP_comp)
-link_table = sqlContext.read.format('com.databricks.spark.csv').options(header='true').load("hdfs:///user/w205/financial_data/linking_table/linking_table.csv", schema=schema_link_table)
-beta_suite = sqlContext.read.format('com.databricks.spark.csv').options(header='true').load("hdfs:///user/w205/financial_data/beta_suite/beta_suite.csv", schema=schema_beta_suite)
-recommendations = sqlContext.read.format('com.databricks.spark.csv').options(header='true').load("hdfs:///user/w205/financial_data/recommendations/recommendations.csv", schema=schema_recs)
+## LOAD DATASETS - MAKE SURE SCHEMAS ARE LOADED ALREADY
+## TO LOAD SCHEMAS, COPY-AND-PASTE FROM SchemaWriter.py INTO PYSPARK CONSOLE
+sparkcsv = "com.databricks.spark.csv"
+fin_suite_file_path = "hdfs:///user/w205/financial_data/financial_suite/financial_ratios.csv"
+crsp_file_path = "hdfs:///user/w205/financial_data/crsp_compustat/crsp_compustat_sec_mth.csv"
+link_table_file_path = "hdfs:///user/w205/financial_data/linking_table/linking_table.csv"
+beta_suite_file_path = "hdfs:///user/w205/financial_data/beta_suite/beta_suite.csv"
+recommendations_file_path = "hdfs:///user/w205/financial_data/recommendations/recommendations.csv"
+fin_suite = sqlContext.read.format(sparkcsv).options(header='true').load(fin_suite_file_path, schema=schema_fin_suite)
+CRSP_comp_merge = sqlContext.read.format(sparkcsv).options(header='true').load(crsp_file_path, schema=schema_CRSP_comp)
+link_table = sqlContext.read.format(sparkcsv).options(header='true').load(link_table_file_path, schema=schema_link_table)
+beta_suite = sqlContext.read.format(sparkcsv).options(header='true').load(beta_suite_file_path, schema=schema_beta_suite)
+recommendations = sqlContext.read.format(sparkcsv).options(header='true').load(recommendations_file_path, schema=schema_recs)
 
-
-#MERGING DATA
+## MERGING DATA FRAMES
+df_merge_test = fin_suite.join(link_table, fin_suite.gvkey == link_table.GVKEY, 'leftouter').drop(link_table.GVKEY)
 df = fin_suite.join(link_table, fin_suite.permno == link_table.LPERMNO)
 
-
-#query data to produce new dataframes
+## QUERY DATA TO PRODUCE NEW DATAFRAMES
 CRSP_comp_merge.createOrReplaceTempView("tempview")
 results = spark.sql("SELECT loc FROM tempview limit 50")
 
-# ADD NEW COLUMN (NEED TO CREATE NEW DATAFRAME)
+## TRAMSFORM COLUMNS WITH DATE VALUE TO DATE TYPE
+## IT RUNS FOREVER NOW, NEED TO FIX!! 
+toDateFunc =  udf (lambda x: datetime.strptime(x, '%Y%m%d'), DateType())
+df_test3 = df_merge_test.withColumn('q_date', toDateFunc(col('qdate')))
+# df_test3 = df_merge_test.withColumn('q_date', df_merge_test['qdate'].cast(DateType()).drop(df_merge_test.'qdate')
+
+## ADD NEW COLUMN (NEED TO CREATE NEW DATAFRAME)
 fin_suite_new = fin_suite.withColumn("forward_one_month_prccm", fin_suite.prccm+1)
 
+## CONCATENATE COLUMNS TO CREATE NEW UNIQUE KEYS
+df12345 = df_merge_test.select(concat(col("gvkey"), lit("-"), col("year-month")))
 
 # taking mean of GVKEY is only an example, obviously we wouldn't do that
 # sqlCtx.table("temptable").groupby("LPERMNO").agg("LPERMNO", mean("GVKEY")).collect()
 
 
-''' SHANES FUNCTIONS BELOW '''
-# Percentage of nulls per column
+''' EDA FUNCTIONS BELOW '''
+
+## PERCENTAGE OF NULLS PER COLUMN
 def null_ratio(df):
         null_count = df.isnull().sum()
         null_percent = 100 * df.isnull().sum()/len(df)
@@ -151,3 +174,4 @@ def clip_outliers(column):
     # If error, return as is
     except:
         return column
+
