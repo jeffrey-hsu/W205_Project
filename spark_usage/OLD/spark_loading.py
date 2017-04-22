@@ -1,15 +1,13 @@
-'''
-    USE "pyspark --num-executors 5 --driver-memory 2g --executor-memory 2g" TO LAUNCH pyspark
-    THIS WILL GIVE YOU MORE MEMORY USAGE
-
+```
     1. LOAD SCHEMA FROM schema_writer.py
     2. LOAD RAW CSV DATASET FROM HDFS AND APPLY SCHEMA TO CREATE DATA FRAMES
-    3. TRANSFORMATION OF DATA FRAME
+    3. TRNASFORMATION OF DATA FRAME
     4. CREATE TEMPVIEW FOR APPLYING QUERYING TO CREATE NEW DATA FRAMES
     5. DEFINE THE FUNCTIONS FOR EXPLORATORY DATA ANALYSIS
-'''
+```
 
 from pyspark import SparkContext
+import pandas as pd
 import numpy as np
 import datetime
 import numpy as np
@@ -17,9 +15,7 @@ import sklearn
 from pyspark.sql.types import *
 from pyspark.sql.functions import *
 from pyspark.sql import SQLContext
-from pyspark.sql.functions import lit
-# import pandas as pd
-# import pydoop.hdfs as hd
+import pydoop.hdfs as hd
 # from statsmodels import robust
 # import matplotlib.pyplot as plt
 # import matplotlib.cm
@@ -42,41 +38,25 @@ link_table = sqlContext.read.format(sparkcsv).options(header='true').load(link_t
 beta_suite = sqlContext.read.format(sparkcsv).options(header='true').load(beta_suite_file_path, schema=schema_beta_suite)
 recommendations = sqlContext.read.format(sparkcsv).options(header='true').load(recommendations_file_path, schema=schema_recs)
 
-## TRANSFORM COLUMNS WITH DATE VALUE TO DATE TYPE
-fix_link_table_LINKENDDT = udf(lambda x: '20200101' if x == 'E' else x)
-year_YYYYDDMM = udf(lambda x: x[0:4] if x is not None else None)
-month_YYYYDDMM = udf(lambda x: x[4:6] if x is not None else None)
-year_DDMMYYYY= udf(lambda x: x[6:10] if x is not None else None)
-month_DDMMYYYY = udf(lambda x: x[3:5] if x is not None else None)
-#toDateFunc =  udf (lambda x: datetime.strptime(x, '%Y%m%d'), DateType())
-# df_test3 = df_merge_test.withColumn('q_date', toDateFunc(col('qdate')))
-# df_test3 = df_merge_test.withColumn('q_date', df_merge_test['qdate'].cast(DateType()).drop(df_merge_test.'qdate')
-
 ## MERGING DATA FRAMES
-link_table_fix = link_table.withColumn("LINKENDDT2", fix_link_table_LINKENDDT(col("LINKENDDT"))).drop("LINKENDDT")
-df = fin_suite.join(link_table_fix, fin_suite.gvkey == link_table.GVKEY, 'leftouter').drop(link_table.GVKEY)
-
-## ADDING NEW COLUMNS
-# Template: new_df = old_df.withColumn("NewColName", calculation_for_new_col)
-
-df_with_keys = df.withColumn('GVKEY-year-month', concat(col('gvkey'), lit('-'), year_YYYYDDMM(col('public_date')), lit('-'), month_YYYYDDMM(col('public_date')))).withColumn('CUSIP-year-month', concat(col('cusip'), lit('-'), year_YYYYDDMM(col('public_date')), lit('-'), month_YYYYDDMM(col('public_date')))).withColumn('TIC-year-month', concat(col('tic'), lit('-'), year_YYYYDDMM(col('public_date')), lit('-'), month_YYYYDDMM(col('public_date')))).withColumn('PERMNO-year-month', concat(col('LPERMNO'), lit('-'), year_YYYYDDMM(col('public_date')), lit('-'), month_YYYYDDMM(col('public_date'))))
-
-## FILTER DATAFRAME
-df_filtered = df_with_keys.filter((df_with_keys.public_date >= df_with_keys.LINKDT) & (df_with_keys.public_date <= df_with_keys.LINKENDDT2)).dropDuplicates()
-
-crsp_with_key = CRSP_comp_merge.withColumn('GVKEY-year-month',concat(col('gvkey'), lit('-'), year_DDMMYYYY(col('datadate')), lit('-'), month_DDMMYYYY(col('datadate'))))
-
-######################################################################
-### EVERYTHING ABOVE THIS POINT IS PART OF THE EDA TRANSFORMATIONS ###
-######################################################################
+df_merge_test = fin_suite.join(link_table, fin_suite.gvkey == link_table.GVKEY, 'leftouter').drop(link_table.GVKEY)
+df = fin_suite.join(link_table, fin_suite.permno == link_table.LPERMNO)
 
 ## QUERY DATA TO PRODUCE NEW DATAFRAMES
 CRSP_comp_merge.createOrReplaceTempView("tempview")
 results = spark.sql("SELECT loc FROM tempview limit 50")
 
+## TRAMSFORM COLUMNS WITH DATE VALUE TO DATE TYPE
+## IT RUNS FOREVER NOW, NEED TO FIX!! 
+toDateFunc =  udf (lambda x: datetime.strptime(x, '%Y%m%d'), DateType())
+df_test3 = df_merge_test.withColumn('q_date', toDateFunc(col('qdate')))
+# df_test3 = df_merge_test.withColumn('q_date', df_merge_test['qdate'].cast(DateType()).drop(df_merge_test.'qdate')
+
+## ADD NEW COLUMN (NEED TO CREATE NEW DATAFRAME)
+fin_suite_new = fin_suite.withColumn("forward_one_month_prccm", fin_suite.prccm+1)
 
 ## CONCATENATE COLUMNS TO CREATE NEW UNIQUE KEYS
-# df12345 = df.select(concat(col("gvkey"), lit("-"), col("year-month")))
+df12345 = df_merge_test.select(concat(col("gvkey"), lit("-"), col("year-month")))
 
 # taking mean of GVKEY is only an example, obviously we wouldn't do that
 # sqlCtx.table("temptable").groupby("LPERMNO").agg("LPERMNO", mean("GVKEY")).collect()
@@ -92,15 +72,15 @@ def null_ratio(df):
         null_table = null_table.rename(columns = {0 : 'Null Count', 1 : 'Null Percent'})
         return null_table.sort_values('Null Percent', ascending=0)
 
-# def return_all_rows(x):
-#     pd.set_option('display.max_rows', len(x))
-#     return x
-#     pd.reset_option('display.max_rows')
-#
-# def return_all_columns(x):
-#     pd.set_option('display.max_columns', len(x))
-#     return x.head(5)
-#     pd.reset_option('display.max_columns')
+def return_all_rows(x):
+    pd.set_option('display.max_rows', len(x))
+    return x
+    pd.reset_option('display.max_rows')
+
+def return_all_columns(x):
+    pd.set_option('display.max_columns', len(x))
+    return x.head(5)
+    pd.reset_option('display.max_columns')
 
 def overview(df):
     print("Number of columns:", len(df.columns))
@@ -194,3 +174,4 @@ def clip_outliers(column):
     # If error, return as is
     except:
         return column
+
