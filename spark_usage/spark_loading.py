@@ -2,11 +2,10 @@
     USE "pyspark --num-executors 5 --driver-memory 2g --executor-memory 2g" TO LAUNCH pyspark
     THIS WILL GIVE YOU MORE MEMORY USAGE
 
-    1. LOAD SCHEMA FROM schema_writer.py
-    2. LOAD RAW CSV DATASET FROM HDFS AND APPLY SCHEMA TO CREATE DATA FRAMES
-    3. TRANSFORMATION OF DATA FRAME
-    4. CREATE TEMPVIEW FOR APPLYING QUERYING TO CREATE NEW DATA FRAMES
-    5. DEFINE THE FUNCTIONS FOR EXPLORATORY DATA ANALYSIS
+    1. LOAD PARQUET FILES FROM HDFS
+    2. TRANSFORMATION OF DATA FRAME
+    3. CREATE TEMPVIEW FOR APPLYING QUERYING TO CREATE NEW DATA FRAMES
+    4. DEFINE THE FUNCTIONS FOR EXPLORATORY DATA ANALYSIS
 '''
 
 from pyspark import SparkContext
@@ -14,10 +13,11 @@ import numpy as np
 import datetime
 import numpy as np
 import sklearn
+import scipy
 from pyspark.sql.types import *
 from pyspark.sql.functions import *
 from pyspark.sql import SQLContext
-from pyspark.sql.functions import lit
+from pyspark.sql.window import Window
 # import pandas as pd
 # import pydoop.hdfs as hd
 # from statsmodels import robust
@@ -28,50 +28,107 @@ from pyspark.sql.functions import lit
 
 sc = SparkContext.getOrCreate()
 
-## LOAD DATASETS - MAKE SURE SCHEMAS ARE LOADED ALREADY
-## TO LOAD SCHEMAS, COPY-AND-PASTE FROM SchemaWriter.py INTO PYSPARK CONSOLE
-sparkcsv = "com.databricks.spark.csv"
-fin_suite_file_path = "hdfs:///user/w205/financial_data/financial_suite/financial_ratios.csv"
-crsp_file_path = "hdfs:///user/w205/financial_data/crsp_compustat/crsp_compustat_sec_mth.csv"
-link_table_file_path = "hdfs:///user/w205/financial_data/linking_table/linking_table.csv"
-beta_suite_file_path = "hdfs:///user/w205/financial_data/beta_suite/beta_suite.csv"
-recommendations_file_path = "hdfs:///user/w205/financial_data/recommendations/recommendations.csv"
-fin_suite = sqlContext.read.format(sparkcsv).options(header='true').load(fin_suite_file_path, schema=schema_fin_suite)
-CRSP_comp_merge = sqlContext.read.format(sparkcsv).options(header='true').load(crsp_file_path, schema=schema_CRSP_comp)
-link_table = sqlContext.read.format(sparkcsv).options(header='true').load(link_table_file_path, schema=schema_link_table)
-beta_suite = sqlContext.read.format(sparkcsv).options(header='true').load(beta_suite_file_path, schema=schema_beta_suite)
-recommendations = sqlContext.read.format(sparkcsv).options(header='true').load(recommendations_file_path, schema=schema_recs)
+## NO NEED TO IMPORT SCHEMAS FIRST ANYMORE
+## READ DATASETS FROM PARQUET FORMAT
+## THIS GREATLY IMPROVES SPEED AND REDUCES MEMORY USAGE
+fin_suite = spark.read.parquet("hdfs:///user/w205/financial_data/parquet_files/fin_suite")
+crsp_comp = spark.read.parquet("hdfs:///user/w205/financial_data/parquet_files/crsp")
+link_table = spark.read.parquet("hdfs:///user/w205/financial_data/parquet_files/link_table")
+beta_suite = spark.read.parquet("hdfs:///user/w205/financial_data/parquet_files/beta")
+recommendations = spark.read.parquet("hdfs:///user/w205/financial_data/parquet_files/recs")
+
 
 ## TRANSFORM COLUMNS WITH DATE VALUE TO DATE TYPE
-fix_link_table_LINKENDDT = udf(lambda x: '20200101' if x == 'E' else x)
-year_YYYYDDMM = udf(lambda x: x[0:4] if x is not None else None)
-month_YYYYDDMM = udf(lambda x: x[4:6] if x is not None else None)
-year_DDMMYYYY= udf(lambda x: x[6:10] if x is not None else None)
-month_DDMMYYYY = udf(lambda x: x[3:5] if x is not None else None)
-#toDateFunc =  udf (lambda x: datetime.strptime(x, '%Y%m%d'), DateType())
-# df_test3 = df_merge_test.withColumn('q_date', toDateFunc(col('qdate')))
-# df_test3 = df_merge_test.withColumn('q_date', df_merge_test['qdate'].cast(DateType()).drop(df_merge_test.'qdate')
+fix_LINKENDDT = udf(lambda x: '20200101' if x == 'E' else x)
+getYear = udf(lambda x: x[0:4] if x is not None else None)
+getMonth = udf(lambda x: x[4:6] if x is not None else None)
+getYear2= udf(lambda x: x[6:10] if x is not None else None)
+getMonth2 = udf(lambda x: x[0:2] if x is not None else None)
+ticker_strip = udf(lambda x: x[1:] if x[0] == '@' else None)
+
+
+def add_lead_lag(df, variable):
+    for month in range(1,37):
+        w = Window().partitionBy(col("GVKEY")).orderBy(col("GVKEY_year_mth"))
+        first_new_col = "forward_"+str(month)+"_month_"+str(variable)
+        second_new_col = "past_"+str(month)+"_month_"+str(variable)
+        df = df.withColumn(first_new_col, lag(col(variable),-month,None).over(w)) \
+        .withColumn(second_new_col, lag(col(variable),month,None).over(w))
+    return df
+
+def add_returns(df):
+    for month in range(1,37):
+        first_new_col = "forward_"+str(month)+"_month_return"
+        second_new_col = "past_"+str(month)+"_month_return"
+        forward_prccm = "forward_"+str(month)+"_month_prccm"
+        past_prccm = "past_"+str(month)+"_month_prccm"
+        forward_ajexm = "forward_"+str(month)+"_month_ajexm"
+        past_ajexm = "past_"+str(month)+"_month_ajexm"
+        forward_trfm= "forward_"+str(month)+"_month_trfm"
+        past_trfm =  "past_"+str(month)+"_month_trfm"
+        df = df.withColumn(first_new_col, ((((col(forward_prccm)/col(forward_ajexm))*col(forward_trfm) )/((col('prccm')/col('ajexm'))*col('trfm'))) - 1) * 100 ).withColumn(second_new_col, ((((col('prccm')/col('ajexm'))*col('trfm') )/((col(past_prccm)/col(past_ajexm))*col(past_trfm))) - 1) * 100 )
+    return df
+
 
 ## MERGING DATA FRAMES
-link_table_fix = link_table.withColumn("LINKENDDT2", fix_link_table_LINKENDDT(col("LINKENDDT"))).drop("LINKENDDT")
-df = fin_suite.join(link_table_fix, fin_suite.gvkey == link_table.GVKEY, 'leftouter').drop(link_table.GVKEY)
+link_table = link_table.withColumn("LINKENDDT2", fix_LINKENDDT(col("LINKENDDT"))).drop("LINKENDDT")
+df = fin_suite.join(link_table, fin_suite.gvkey == link_table.GVKEY, 'leftouter').drop(link_table.GVKEY).dropDuplicates()
 
 ## ADDING NEW COLUMNS
 # Template: new_df = old_df.withColumn("NewColName", calculation_for_new_col)
 
-df_with_keys = df.withColumn('GVKEY-year-month', concat(col('gvkey'), lit('-'), year_YYYYDDMM(col('public_date')), lit('-'), month_YYYYDDMM(col('public_date')))).withColumn('CUSIP-year-month', concat(col('cusip'), lit('-'), year_YYYYDDMM(col('public_date')), lit('-'), month_YYYYDDMM(col('public_date')))).withColumn('TIC-year-month', concat(col('tic'), lit('-'), year_YYYYDDMM(col('public_date')), lit('-'), month_YYYYDDMM(col('public_date')))).withColumn('PERMNO-year-month', concat(col('LPERMNO'), lit('-'), year_YYYYDDMM(col('public_date')), lit('-'), month_YYYYDDMM(col('public_date'))))
+df = df.withColumn('GVKEY_year_mth', concat(col('gvkey'), lit('-'), getYear(col('public_date')), lit('-'), getMonth(col('public_date')))) \
+    .withColumn('CUSIP_year_mth', concat(col('cusip'), lit('-'), getYear(col('public_date')), lit('-'), getMonth(col('public_date')))) \
+    .withColumn('TIC_year_mth', concat(col('tic'), lit('-'), getYear(col('public_date')), lit('-'), getMonth(col('public_date')))) \
+    .withColumn('PERMNO_year_mth', concat(col('LPERMNO'), lit('-'), getYear(col('public_date')), lit('-'), getMonth(col('public_date'))))
 
-## FILTER DATAFRAME
-df_filtered = df_with_keys.filter((df_with_keys.public_date >= df_with_keys.LINKDT) & (df_with_keys.public_date <= df_with_keys.LINKENDDT2)).dropDuplicates()
+crsp_comp = crsp_comp.withColumn('GVKEY_year_mth',concat(col('gvkey'), lit('-'), getYear(col('datadate')), lit('-'), getMonth(col('datadate'))))
 
-crsp_with_key = CRSP_comp_merge.withColumn('GVKEY-year-month',concat(col('gvkey'), lit('-'), year_DDMMYYYY(col('datadate')), lit('-'), month_DDMMYYYY(col('datadate'))))
+
+recommendations = recommendations.withColumn("TICKER2", ticker_strip(col("TICKER"))).drop("TICKER") \
+.withColumn('TIC_year_mth',concat(col('TICKER2'), lit('-'), getYear2(col('STATPERS')), lit('-'), getMonth2(col('STATPERS')))) \
+    .withColumn("recup", col("NUMUP") / col("NUMREC")) \
+    .withColumn("recdown", col("NUMDOWN") / col("NUMREC")) \
+
+
+
+beta_suite = beta_suite.withColumn('PERMNO_year_mth',concat(col('PERMNO'), lit('-'), getYear(col('DATE')), lit('-'), getMonth(col('DATE'))))
+
+
+## FILTER DATAFRAME - FILTERS ARE COSTLY STORAGE-WISE
+df = df.filter((df.public_date >= df.LINKDT) & (df.public_date <= df.LINKENDDT2)).dropDuplicates()
+
+crsp_comp = add_lead_lag(crsp_comp, "prccm")
+crsp_comp = add_lead_lag(crsp_comp, "ajexm")
+crsp_comp = add_lead_lag(crsp_comp, "trfm")
+crsp_comp = add_returns(crsp_comp)
+
+# JOIN CRSP COMPUSTAT
+df = df.join(crsp_comp, df.GVKEY_year_mth == crsp_comp.GVKEY_year_mth, 'leftouter').drop(crsp_comp.GVKEY_year_mth).dropDuplicates()
+
+# JOIN RECOMMENDATIONS
+df = df.join(recommendations, df.TIC_year_mth == recommendations.TIC_year_mth, 'leftouter').drop(recommendations.TIC_year_mth).dropDuplicates()
+
+# JOIN BETA SUITE
+df = df.join(beta_suite, df.PERMNO_year_mth == beta_suite.PERMNO_year_mth, 'leftouter').drop(beta_suite.PERMNO_year_mth).dropDuplicates()
+
+# Sector - Enrich
+# https://en.wikipedia.org/wiki/Global_Industry_Classification_Standard
+sector = sqlContext.createDataFrame([(10.0, "Energy"), (15.0, "Materials"), (20.0, "Industrials"), \
+(25.0, "Consumer Discretionary"), (30.0, "Consumer Staples"), (35.0, "Health Care"), (40.0, "Financials"), \
+(45.0, "Information Technology"), (50.0, "Telecommunication Services"), (55.0, "Utilities"), (60.0, "Real Estate")], \
+["GSECTOR", "sector"])
+
+# JOIN sector
+df = df.join(sector, df.GSECTOR == sector.GSECTOR, 'leftouter').drop(sector.GSECTOR).dropDuplicates()
+
 
 ######################################################################
 ### EVERYTHING ABOVE THIS POINT IS PART OF THE EDA TRANSFORMATIONS ###
 ######################################################################
 
 ## QUERY DATA TO PRODUCE NEW DATAFRAMES
-CRSP_comp_merge.createOrReplaceTempView("tempview")
+crsp_comp.createOrReplaceTempView("tempview")
 results = spark.sql("SELECT loc FROM tempview limit 50")
 
 
@@ -92,20 +149,7 @@ def null_ratio(df):
         null_table = null_table.rename(columns = {0 : 'Null Count', 1 : 'Null Percent'})
         return null_table.sort_values('Null Percent', ascending=0)
 
-# def return_all_rows(x):
-#     pd.set_option('display.max_rows', len(x))
-#     return x
-#     pd.reset_option('display.max_rows')
-#
-# def return_all_columns(x):
-#     pd.set_option('display.max_columns', len(x))
-#     return x.head(5)
-#     pd.reset_option('display.max_columns')
-
-def overview(df):
-    print("Number of columns:", len(df.columns))
-    print("Number of rows:", len(df.index))
-    df.head(5)
+null_ratio_udf = udf(null_ratio)
 
 def drop_dups(df):
     # list comprehension of the cols that end with '_y'
@@ -115,6 +159,8 @@ def drop_dups(df):
 def floatToString(inputValue):
     result = ('%.15f' % inputValue).rstrip('0').rstrip('.')
     return '0' if result == '-0' else result
+
+floatToString_udf = udf(floatToString)
 
 def mad(arr):
     """
