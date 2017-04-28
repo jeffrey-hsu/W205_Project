@@ -10,12 +10,13 @@
 from pyspark import SparkContext
 import numpy as np
 import datetime
-import sklearn
-import scipy
+# import sklearn
+# import scipy
 from pyspark.sql.types import *
 from pyspark.sql.functions import *
 from pyspark.sql import SQLContext
 from pyspark.sql.window import Window
+import sys
 
 sc = SparkContext.getOrCreate()
 
@@ -124,92 +125,5 @@ crsp_comp.createOrReplaceTempView("tempview")
 results = spark.sql("SELECT loc FROM tempview limit 50")
 
 
-## CONCATENATE COLUMNS TO CREATE NEW UNIQUE KEYS
-# df12345 = df.select(concat(col("gvkey"), lit("-"), col("year-month")))
-
 # taking mean of GVKEY is only an example, obviously we wouldn't do that
 # sqlCtx.table("temptable").groupby("LPERMNO").agg("LPERMNO", mean("GVKEY")).collect()
-
-
-''' EDA FUNCTIONS BELOW '''
-
-
-
-def mad(arr):
-    """
-    Get Median Absolute Deviation and multiple by 1.486 to mimic standard deviation
-        https://www.ibm.com/support/knowledgecenter/SSWLVY_1.0.0/com.ibm.spss.analyticcatalyst.help/analytic_catalyst/modified_z.html
-    Median Absolute Deviation: a "Robust" version of standard deviation.
-        Indices variabililty of the sample.
-        https://en.wikipedia.org/wiki/Median_absolute_deviation
-    """
-    arr = np.ma.array(arr).compressed() # should be faster to not use masked arrays.
-    med = np.nanmedian(arr)
-    mad = np.nanmedian(np.abs(arr - med))
-    # Multiply coefficient by 1.486 to mimic Standard Deviation (source: IBM)
-    return 1.486 * mad
-
-
-def meanad(arr):
-    """
-    Get Mean Absolute Deviation and multiple by 1.253314 to mimic standard deviation
-        https://www.ibm.com/support/knowledgecenter/SSWLVY_1.0.0/com.ibm.spss.analyticcatalyst.help/analytic_catalyst/modified_z.html
-    Mean Absolute Deviation: a "Robust" version of standard deviation.
-        Indices variabililty of the sample.
-        https://en.wikipedia.org/wiki/Mean_absolute_deviation
-    """
-    arr = np.ma.array(arr).compressed() # should be faster to not use masked arrays.
-    med = np.nanmedian(arr)
-    mad = np.nanmean(np.abs(arr - med))
-    # Multiply coefficient by 1.253314 to mimic Standard Deviation (source: IBM)
-    return 1.253314 * mad
-
-def modified_z(array):
-    try:
-        try:
-            try:
-                median = np.nanmedian(array)
-                denominator = mad(array) * 1.486
-                array = (array - median) / denominator
-                return array
-            except:
-                median = np.nanmedian(array)
-                denominator = meanad(array) * 1.253314
-                array = (array - median) / denominator
-                return array
-        except:
-            mean = np.nanmean(array)
-            denominator = np.nanstd(array)
-            array = (array - mean) / denominator
-            return array
-    except:
-        array = array.fillna(0)
-
-
-def fill_null(column):
-    try:
-        median = np.nanmedian(column)
-        column = column.fillna(median)
-        return column
-    except:
-        return column
-
-def impute_null(column):
-    try:
-        imp = Imputer(missing_values='NaN', strategy='median', axis=0)
-        imp.fit(column)
-        column = imp.transform(column)
-        return column
-    except:
-        return column
-
-def clip_outliers(column):
-    # Use try in case all null column
-    try:
-        floor = column.quantile(0.02)
-        ceiling = column.quantile(0.98)
-        column = column.clip(floor, ceiling)
-        return column
-    # If error, return as is
-    except:
-        return column
