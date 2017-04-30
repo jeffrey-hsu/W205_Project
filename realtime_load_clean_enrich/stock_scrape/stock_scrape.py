@@ -1,8 +1,3 @@
-
-# coding: utf-8
-
-# In[1]:
-
 import requests
 from bs4 import BeautifulSoup
 import csv
@@ -10,7 +5,6 @@ import pdb
 import datetime
 import pandas as pd
 import numpy as np
-
 
 def floatToString(inputValue):
     result = ('%.15f' % inputValue).rstrip('0').rstrip('.')
@@ -39,9 +33,6 @@ for title in titleslist:
     titlesarray.append(title.text)
 
 titlesarray.insert(1,titleticker)
-
-# Finviz - Review Titles
-titlesarray
 
 # Finviz - Iterate through each page of screener and grab all data
 # Create empty lists & counter for while loop
