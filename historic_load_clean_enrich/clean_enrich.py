@@ -104,9 +104,6 @@ df = df.drop_duplicates(['GVKEY-year-month'], keep='last')
 # Load CRSP/Compustat Merged Database - Security Monthly from Wharton
 CRSP_comp_merge = pd.read_csv('c:/users/shane/desktop/W205_Final/sample_data/CRSP_Compustat_Merged_Security_Monthly.csv')
 
-# CRSP - Investigation
-CRSP_comp_merge
-
 # CRSP - Enrich - Time Features
 # Convert to date-time
 CRSP_comp_merge['datadate'] = pd.to_datetime(CRSP_comp_merge['datadate'], infer_datetime_format=True)
@@ -966,7 +963,6 @@ df['recdown'] = df.groupby(['year-month', 'sector'])[['recdown']].apply(clip_out
 df['STDEV'] = df.groupby(['year-month', 'sector'])[['STDEV']].apply(clip_outliers)
 
 # Clip by month for whole market
-
 # Dependent Variable
 df['forward_one_month_return'] = df.groupby(['year-month'])[['forward_one_month_return']].apply(clip_outliers)
 df['forward_two_month_return'] = df.groupby(['year-month'])[['forward_two_month_return']].apply(clip_outliers)
@@ -1482,7 +1478,6 @@ df['past_thirtythree_month_return_up'] = np.where(df['past_thirtythree_month_ret
 df['past_thirtyfour_month_return_up'] = np.where(df['past_thirtyfour_month_return'] >= 0, 1, 0)
 df['past_thirtyfive_month_return_up'] = np.where(df['past_thirtyfive_month_return'] >= 0, 1, 0)
 df['past_thirtysix_month_return_up'] = np.where(df['past_thirtysix_month_return'] >= 0, 1, 0)
-
 
 # df - Enrich - Sector Dummy Variablees
 sectors =  pd.get_dummies(df.sector, prefix="sector").astype(int)
