@@ -1,57 +1,57 @@
-Feature Rank,feature,weight,Correlation Rank,Total Rank,
-5,DIVYIELD,0.017272722,2,7,"'DIVYIELD',"
-3,ptb,0.035848755,6,9,"'ptb',"
-2,ps,0.033966263,8,10,"'ps',"
-0,pe_op_basic,0.03115743,14,14,"'pe_op_basic',"
-10,sector_Financials,0.007245782,4,14,"'sector_Financials',"
-21,past_twelve_month_return_up,0.015403607,0,21,"'past_twelve_month_return_up',"
-11,sector_Information Technology,0.004062193,11,22,"'sector_Information Technology',"
-22,past_six_month_return_up,0.008477335,1,23,"'past_six_month_return_up',"
-1,PEG_trailing,0.0297896,23,24,"'PEG_trailing',"
-7,MEANREC,0.029097498,21,28,"'MEANREC',"
-12,sector_Consumer Discretionary,0.00249567,16,28,"'sector_Consumer Discretionary',"
-23,past_three_month_return_up,0.006939168,5,28,"'past_three_month_return_up',"
-4,pcf,0.03317907,26,30,"'pcf',"
-18,sector_Utilities,0.002540665,12,30,"'sector_Utilities',"
-14,sector_Health Care,0.002313878,22,36,"'sector_Health Care',"
-24,past_one_month_return_up,0.008426373,13,37,"'past_one_month_return_up',"
-6,roa,0.032687889,32,38,"'roa',"
-42,DIVYIELD_zscore,0.016541664,3,45,"'DIVYIELD_zscore',"
-8,curr_ratio,0.029294432,38,46,"'curr_ratio',"
-17,sector_Consumer Staples,0.001789522,29,46,"'sector_Consumer Staples',"
-39,ps_zscore,0.033015434,7,46,"'ps_zscore',"
-40,ptb_zscore,0.032387265,9,49,"'ptb_zscore',"
-19,sector_Telecommunication Services,0.001378231,31,50,"'sector_Telecommunication Services',"
-20,sector_Real Estate,0.000714374,30,50,"'sector_Real Estate',"
-9,quick_ratio,0.029929534,42,51,"'quick_ratio',"
-16,sector_Materials,0.002064662,36,52,"'sector_Materials',"
-37,pe_op_basic_zscore,0.030107304,15,52,"'pe_op_basic_zscore',"
-15,sector_Energy,0.001814861,41,56,"'sector_Energy',"
-13,sector_Industrials,0.002782578,44,57,"'sector_Industrials',"
-38,PEG_trailing_zscore,0.02939675,19,57,"'PEG_trailing_zscore',"
-48,ps_sector_zscore,0.032471427,10,58,"'ps_sector_zscore',"
-25,january,0.005484981,39,64,"'january',"
-41,pcf_zscore,0.033492793,24,65,"'pcf_zscore',"
-46,pe_op_basic_sector_zscore,0.029745705,20,66,"'pe_op_basic_sector_zscore',"
-49,ptb_sector_zscore,0.032175117,17,66,"'ptb_sector_zscore',"
-51,DIVYIELD_sector_zscore,0.017487114,18,69,"'DIVYIELD_sector_zscore',"
-26,february,0.005067319,45,71,"'february',"
-34,october,0.005606239,37,71,"'october',"
-44,MEANREC_zscore,0.031515472,28,72,"'MEANREC_zscore',"
-47,PEG_trailing_sector_zscore,0.029286194,27,74,"'PEG_trailing_sector_zscore',"
-50,pcf_sector_zscore,0.030630883,25,75,"'pcf_sector_zscore',"
-31,july,0.00563952,46,77,"'july',"
-43,roa_zscore,0.033076238,34,77,"'roa_zscore',"
-28,april,0.005384387,51,79,"'april',"
-30,june,0.005431414,49,79,"'june',"
-32,august,0.0056911,47,79,"'august',"
-36,december,0.005345537,43,79,"'december',"
-27,march,0.004731011,53,80,"'march',"
-29,may,0.005231571,54,83,"'may',"
-33,september,0.005313521,52,85,"'september',"
-53,MEANREC_sector_zscore,0.03210818,33,86,"'MEANREC_sector_zscore',"
-52,roa_sector_zscore,0.032411904,35,87,"'roa_sector_zscore',"
-35,november,0.005238312,55,90,"'november',"
-45,curr_ratio_zscore,0.029509253,48,93,"'curr_ratio_zscore',"
-54,curr_ratio_sector_zscore,0.029661799,40,94,"'curr_ratio_sector_zscore',"
-55,quick_ratio_sector_zscore,0.030142501,50,105,"'quick_ratio_sector_zscore',"
+,feature,weight
+0,pe_op_basic,0.031455967609413604
+1,PEG_trailing,0.03025388965169918
+2,ps,0.03561398809636143
+3,ptb,0.03561698351006354
+4,pcf,0.03223566661599758
+5,DIVYIELD,0.01841695075234132
+6,roa,0.033246114900720214
+7,MEANREC,0.029635034841835068
+8,curr_ratio,0.02962797308066295
+9,quick_ratio,0.03002869045679289
+10,sector_Financials,0.007320620321771412
+11,sector_Information Technology,0.003368927566690118
+12,sector_Consumer Discretionary,0.002392597995298006
+13,sector_Industrials,0.0026290258083134614
+14,sector_Health Care,0.0022283047652381363
+15,sector_Energy,0.0017930114162915873
+16,sector_Materials,0.0018967375711257141
+17,sector_Consumer Staples,0.0015133534643408007
+18,sector_Utilities,0.0023624689584576418
+19,sector_Telecommunication Services,0.0010273595671243653
+20,sector_Real Estate,0.0006796847039059295
+21,past_twelve_month_return_up,0.016898791015969753
+22,past_six_month_return_up,0.008077031985333539
+23,past_three_month_return_up,0.006759410526804624
+24,past_one_month_return_up,0.0069090726070414315
+25,january,0.005162937023897385
+26,february,0.005150088032144061
+27,march,0.004135819622138296
+28,april,0.004932634859999069
+29,may,0.004986425321327172
+30,june,0.005144169287695037
+31,july,0.005399657183014378
+32,august,0.005153196470012213
+33,september,0.005153938682654775
+34,october,0.004966764283457274
+35,november,0.0040414871287571714
+36,december,0.004787981992871633
+37,pe_op_basic_zscore,0.030523778030752548
+38,PEG_trailing_zscore,0.030052817638611496
+39,ps_zscore,0.03334962770093843
+40,ptb_zscore,0.03240000917655534
+41,pcf_zscore,0.031037489812317114
+42,DIVYIELD_zscore,0.016572628981828208
+43,roa_zscore,0.03371287706238056
+44,MEANREC_zscore,0.032410936718441294
+45,curr_ratio_zscore,0.029883234188234166
+46,pe_op_basic_sector_zscore,0.030346707006120754
+47,PEG_trailing_sector_zscore,0.0296196246465788
+48,ps_sector_zscore,0.032679815993879625
+49,ptb_sector_zscore,0.032036710270535104
+50,pcf_sector_zscore,0.030637553779769157
+51,DIVYIELD_sector_zscore,0.017501403918868334
+52,roa_sector_zscore,0.03295210911925606
+53,MEANREC_sector_zscore,0.032878442639608645
+54,curr_ratio_sector_zscore,0.030111235085818262
+55,quick_ratio_sector_zscore,0.030290240551943327
