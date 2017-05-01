@@ -114,16 +114,5 @@ sector = sqlContext.createDataFrame([(10.0, "Energy"), (15.0, "Materials"), (20.
 # JOIN sector
 df = df.join(sector, df.GSECTOR == sector.GSECTOR, 'leftouter').drop(sector.GSECTOR)
 
+# Write output to parquet file
 df.write.parquet("hdfs:///user/w205/financial_data/parquet_files/output_file")
-
-######################################################################
-### EVERYTHING ABOVE THIS POINT IS PART OF THE EDA TRANSFORMATIONS ###
-######################################################################
-
-## QUERY DATA TO PRODUCE NEW DATAFRAMES
-crsp_comp.createOrReplaceTempView("tempview")
-results = spark.sql("SELECT loc FROM tempview limit 50")
-
-
-# taking mean of GVKEY is only an example, obviously we wouldn't do that
-# sqlCtx.table("temptable").groupby("LPERMNO").agg("LPERMNO", mean("GVKEY")).collect()
