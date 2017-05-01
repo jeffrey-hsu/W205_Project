@@ -4,7 +4,7 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn import preprocessing
 
 # Load historic training data
-train = pd.read_csv('/data/Desktop/W205_Final/W205_Project/historic_load_clean_enrich/df.csv')
+train = pd.read_csv('/data/W205_Final/W205_Project/historic_load_clean_enrich/df.csv')
 
 # Load real-time data (cleaned)
 realtime = pd.read_csv('/data/W205_Final/W205_Project/realtime_load_clean_enrich/realtime_clean_enrich/realtime.csv')
