@@ -117,8 +117,8 @@ labels = UpDown.fit_transform(train.forward_twelve_month_return_up)
 train['labels'] = labels
 
 # Train Machine Learning model using historic data
-model = RandomForestClassifier('bootstrap': False, 'criterion': 'entropy', 'max_depth': None,
-                                'max_features': 'auto', 'min_samples_leaf': 4, 'min_samples_split': 15, 'n_estimators': 100)
+model = RandomForestClassifier(n_estimators=100, criterion='entropy', max_depth=None, min_samples_split=12,
+                             min_samples_leaf=4, max_features='auto', bootstrap=False)
 
 model.fit(train[features], train['labels'])
 predicted = np.array(model.predict_proba(realtime[features]))
@@ -126,7 +126,7 @@ predicted = np.array(model.predict_proba(realtime[features]))
 predictions=pd.DataFrame(predicted, columns=UpDown.classes_)
 
 # Predictions - Change Column Names
-predictions = result.rename(columns = {
+predictions = predictions.rename(columns = {
                                 0:'Probability of Loss on Investment',
                                 1:'Probability of Return on Investment',
                                  })
