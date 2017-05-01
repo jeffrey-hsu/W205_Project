@@ -136,7 +136,7 @@ while(currentpage > 0):
 print "Finviz scrape complete"
 
 # Finviz - Write to CSV
-with open('c:/users/shane/desktop/W205_Final/W205_Project/stock_scrape/finviz.csv', 'w') as csvfile:
+with open('/data/W205_Final/W205_Project/stock_scrape/finviz.csv', 'w') as csvfile:
     writer = csv.DictWriter(csvfile, lineterminator='\n', fieldnames=titlesarray)
 
     writer.writeheader()
@@ -214,7 +214,7 @@ with open('c:/users/shane/desktop/W205_Final/W205_Project/stock_scrape/finviz.cs
                         })
 
 # df - Initiate dataframe using Finviz CSV
-df = pd.read_csv('c:/users/shane/desktop/W205_Final/W205_Project/stock_scrape/finviz.csv')
+df = pd.read_csv('/data/W205_Final/W205_Project/stock_scrape/finviz.csv')
 
 # df - Add Key Statistics Data from Yahoo Finance Queries
 enterpriseValue = []
@@ -753,5 +753,5 @@ df['targetLowPrice'] = targetLowPrice
 df['debtToEquity'] = debtToEquity
 
 # df - Write to CSV
-df.to_csv('c:/users/shane/desktop/W205_Final/W205_Project/stock_scrape/realtime.csv')
+df.to_csv('/data/W205_Final/W205_Project/stock_scrape/realtime.csv')
 print 'Stock scrape complete'

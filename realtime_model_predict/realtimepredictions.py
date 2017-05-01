@@ -4,13 +4,13 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn import preprocessing
 
 # Load historic training data
-train = pd.read_csv('C:/Users/shane/Desktop/W205_Final/W205_Project/historic_load_clean_enrich/df.csv')
+train = pd.read_csv('/data/Desktop/W205_Final/W205_Project/historic_load_clean_enrich/df.csv')
 
 # Load real-time data (cleaned)
-realtime = pd.read_csv('C:/Users/shane/Desktop/W205_Final/W205_Project/realtime_load_clean_enrich/realtime_clean_enrich/realtime.csv')
+realtime = pd.read_csv('/data/W205_Final/W205_Project/realtime_load_clean_enrich/realtime_clean_enrich/realtime.csv')
 
 # Load real-time data (raw)
-realtime_raw = pd.read_csv('C:/Users/shane/Desktop/W205_Final/W205_Project/realtime_load_clean_enrich/stock_scrape/realtime.csv')
+realtime_raw = pd.read_csv('/data/W205_Final/W205_Project/realtime_load_clean_enrich/stock_scrape/realtime.csv')
 
 # Select Features (available in both historic and real-time)
 features = [
@@ -141,4 +141,4 @@ realtimepredictions = pd.concat([predictions, realtime_raw], axis=1, join_axes=[
 realtimepredictions = realtimepredictions.sort_values(by=['Probability Gap', 'Probability of Return on Investment', 'Ticker'], ascending=[0, 0, 1])
 
 # Real-time predictions - Write to CSV
-realtimepredictions.to_csv('realtimepredictions.csv', index = True, index_label = 'Id'
+realtimepredictions.to_csv('/data/W205_Final/W205_Project/realtime_model_predict/realtimepredictions.csv', index = True, index_label = 'Id'

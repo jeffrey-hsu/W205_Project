@@ -37,7 +37,7 @@ def modified_z(array):
         return array
 
 
-df = pd.read_csv('C:/Users/shane/Desktop/W205_Final/W205_Project/realtime_load_clean_enrich/stock_scrape/realtime.csv')
+df = pd.read_csv('/data/W205_Final/W205_Project/realtime_load_clean_enrich/stock_scrape/realtime.csv')
 
 
 # df - Replace "-" with NaN
@@ -132,4 +132,4 @@ df['Perf Quart'] = np.where(df['Perf Quart'] >= 0, 1, 0)
 df['Perf Month'] = np.where(df['Perf Month'] >= 0, 1, 0)
 
 # df - Write cleaned data to CSV
-df.to_csv('realtime.csv')
+df.to_csv('/data/W205_Project/realtime_load_clean_enrich/realtime_clean_enrich/realtime.csv')
